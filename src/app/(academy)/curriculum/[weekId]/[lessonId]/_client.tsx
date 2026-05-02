@@ -104,15 +104,15 @@ export function LessonClient(props: Props) {
 
         {props.hasGuide && (
           <Link
-            href={`/guides/${props.weekSlug}/${props.lessonSlug}`}
+            href={`/playbooks/${props.weekSlug}/${props.lessonSlug}`}
             className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 hover:shadow-md hover:border-emerald-300 transition-all group"
           >
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200 transition-colors">
               <BookOpen className="h-5 w-5" />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-slate-900">Read the written guide</div>
-              <div className="text-xs text-slate-500">Prefer reading? Study the full documentation for this lesson.</div>
+              <div className="text-sm font-bold text-slate-900">Read the Playbook</div>
+              <div className="text-xs text-slate-500">The full tactical playbook for this lesson — read, apply, dominate.</div>
             </div>
             <ExternalLink className="h-4 w-4 text-emerald-600 shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </Link>

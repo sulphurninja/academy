@@ -319,7 +319,7 @@ export function AdminLessonForm({ weekSlug, lessonSlug, title, initial }: Props)
         </div>
       </div>
 
-      {/* ── Written Guide Content ── */}
+      {/* ── Playbook Content ── */}
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50">
         <button
           type="button"
@@ -331,7 +331,7 @@ export function AdminLessonForm({ weekSlug, lessonSlug, title, initial }: Props)
         >
           <span className="inline-flex items-center gap-1.5">
             <Type className="h-3.5 w-3.5 text-emerald-700" />
-            Written Guide Content
+            Playbook Content
             {state.content && (
               <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-extrabold">
                 {Math.ceil(state.content.length / 1200)} min read

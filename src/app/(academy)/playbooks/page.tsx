@@ -41,10 +41,10 @@ export default async function GuidesHub() {
           </span>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Written Guides
+              Playbooks
             </h1>
             <p className="text-sm text-slate-500">
-              Prefer reading? Study every lesson as a beautifully written guide.
+              Battle-tested playbooks for every lesson. Read, apply, dominate.
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default async function GuidesHub() {
                 return (
                   <Link
                     key={lesson.slug}
-                    href={`/guides/${week.slug}/${lesson.slug}`}
+                    href={`/playbooks/${week.slug}/${lesson.slug}`}
                     className="group rounded-2xl border border-slate-200 bg-white p-4 hover:border-emerald-200 hover:shadow-md transition-all"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">

@@ -29,6 +29,8 @@ import {
   Bell,
   Code2,
   FileText,
+  Briefcase,
+  Lock,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn, fmtNumber } from "@/lib/utils";
@@ -82,6 +84,12 @@ export default function AcademySidebar({
         items: [
           { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
           {
+            title: "Planner",
+            href: "/workspace",
+            icon: <Briefcase className="h-4 w-4" />,
+            badge: "new",
+          },
+          {
             title: "Community",
             href: "/community",
             icon: <MessageSquare className="h-4 w-4" />,
@@ -100,8 +108,8 @@ export default function AcademySidebar({
             icon: <BookOpen className="h-4 w-4" />,
           },
           {
-            title: "Written Guides",
-            href: "/guides",
+            title: "Playbooks",
+            href: "/playbooks",
             icon: <FileText className="h-4 w-4" />,
           },
           {
@@ -135,6 +143,12 @@ export default function AcademySidebar({
           { title: "Leaderboard", href: "/leaderboard", icon: <Trophy className="h-4 w-4" /> },
           { title: "Badges", href: "/badges", icon: <Award className="h-4 w-4" /> },
           { title: "Streaks", href: "/streaks", icon: <Flame className="h-4 w-4" /> },
+          {
+            title: "Exclusive",
+            href: "/exclusive",
+            icon: <Lock className="h-4 w-4" />,
+            badge: "VIP",
+          },
           {
             title: "Showdown",
             href: process.env.NEXT_PUBLIC_ZAPTICK_URL

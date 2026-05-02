@@ -54,8 +54,8 @@ export default async function GuidePage({
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs">
-        <Link href="/guides" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 font-bold">
-          <ArrowLeft className="h-3.5 w-3.5" /> Guides
+        <Link href="/playbooks" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 font-bold">
+          <ArrowLeft className="h-3.5 w-3.5" /> Playbooks
         </Link>
         <span className="text-slate-300">/</span>
         <Link href={`/curriculum/${week.slug}`} className="text-slate-500 hover:text-slate-700 font-bold">
@@ -70,7 +70,7 @@ export default async function GuidePage({
             Week {week.weekIndex + 1} · Lesson {idx + 1}
           </span>
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-            <BookOpen className="h-3 w-3" /> Written Guide
+            <BookOpen className="h-3 w-3" /> Playbook
           </span>
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-500">
             <Clock className="h-3 w-3" /> {readTime} min read
@@ -135,7 +135,7 @@ export default async function GuidePage({
       <div className="grid sm:grid-cols-2 gap-3">
         {prev ? (
           <Link
-            href={`/guides/${week.slug}/${prev.slug}`}
+            href={`/playbooks/${week.slug}/${prev.slug}`}
             className="rounded-2xl border border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm p-4 transition-all flex items-center gap-3 group"
           >
             <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
@@ -149,7 +149,7 @@ export default async function GuidePage({
         )}
         {next ? (
           <Link
-            href={`/guides/${week.slug}/${next.slug}`}
+            href={`/playbooks/${week.slug}/${next.slug}`}
             className="rounded-2xl border border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm p-4 transition-all flex items-center gap-3 group justify-end text-right"
           >
             <div className="min-w-0">
@@ -160,12 +160,12 @@ export default async function GuidePage({
           </Link>
         ) : (
           <Link
-            href="/guides"
+            href="/playbooks"
             className="rounded-2xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 p-4 transition-colors flex items-center gap-3 justify-end text-right"
           >
             <div>
               <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-700">Done!</div>
-              <div className="text-sm font-bold text-emerald-800">Back to all guides →</div>
+              <div className="text-sm font-bold text-emerald-800">Back to all playbooks →</div>
             </div>
           </Link>
         )}
