@@ -52,11 +52,16 @@ export default function CommentThread({ weekSlug, lessonSlug }: CommentThreadPro
     if (!draft.trim()) return;
     setPosting(true);
     try {
-      await fetch("/api/comments", {
+      const r = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weekSlug, lessonSlug, body: draft.trim() }),
       });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        alert(j.error || "Failed to post comment. Please try again.");
+        return;
+      }
       setDraft("");
       await load();
     } finally {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ExternalLink,
   FileText,
@@ -33,13 +33,15 @@ interface Props {
   quizBestScore?: number;
   challenge?: string;
   resources: { label: string; url: string }[];
+  initialNote?: string;
 }
 
 export function LessonClient(props: Props) {
   const [tab, setTab] = useState<Tab>("quiz");
   const [completed, setCompleted] = useState(props.videoCompleted);
-  const [savedNote, setSavedNote] = useState("");
-  const [noteDraft, setNoteDraft] = useState("");
+  const [noteDraft, setNoteDraft] = useState(props.initialNote || "");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteSaved, setNoteSaved] = useState(false);
 
   const onVideoComplete = async () => {
     if (completed) return;
@@ -210,35 +212,49 @@ export function LessonClient(props: Props) {
             {tab === "notes" && (
               <div className="space-y-3">
                 <p className="text-xs text-slate-500">
-                  Personal notes for this lesson. Saved locally to your browser — encrypted cloud notes
-                  ship in v2.
+                  Personal notes for this lesson. Saved to your account — accessible from any device.
                 </p>
                 <textarea
                   value={noteDraft}
-                  onChange={(e) => setNoteDraft(e.target.value)}
+                  onChange={(e) => {
+                    setNoteDraft(e.target.value);
+                    setNoteSaved(false);
+                  }}
                   placeholder="One-line takeaway, copy ideas, screenshots URLs, etc."
                   rows={6}
                   className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 />
                 <div className="flex items-center justify-end gap-2">
+                  {noteSaved && (
+                    <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Saved
+                    </span>
+                  )}
                   <button
-                    onClick={() => {
+                    disabled={noteSaving}
+                    onClick={async () => {
+                      setNoteSaving(true);
                       try {
-                        localStorage.setItem(
-                          `zap-academy-note:${props.weekSlug}:${props.lessonSlug}`,
-                          noteDraft
-                        );
-                        setSavedNote(noteDraft);
-                      } catch {}
+                        const r = await fetch("/api/notes", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            weekSlug: props.weekSlug,
+                            lessonSlug: props.lessonSlug,
+                            body: noteDraft,
+                          }),
+                        });
+                        if (r.ok) setNoteSaved(true);
+                      } finally {
+                        setNoteSaving(false);
+                      }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50"
                   >
-                    <Bookmark className="h-3.5 w-3.5" /> Save note
+                    <Bookmark className="h-3.5 w-3.5" />
+                    {noteSaving ? "Saving…" : "Save note"}
                   </button>
                 </div>
-                {savedNote && (
-                  <div className="text-[11px] text-emerald-700 font-bold">Saved.</div>
-                )}
               </div>
             )}
 

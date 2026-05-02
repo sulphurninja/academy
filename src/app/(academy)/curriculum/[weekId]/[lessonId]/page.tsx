@@ -15,6 +15,7 @@ import dbConnect from "@/lib/db";
 import Lesson from "@/models/Lesson";
 import Progress from "@/models/Progress";
 import Bookmark from "@/models/Bookmark";
+import Note from "@/models/Note";
 import { LessonClient } from "./_client";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export default async function LessonPage({
   const theme = PHASE_THEME[week.phase];
 
   await dbConnect();
-  const [dbLesson, progress, bookmark] = await Promise.all([
+  const [dbLesson, progress, bookmark, note] = await Promise.all([
     Lesson.findOne({ weekSlug: week.slug, lessonSlug: lesson.slug }).lean<{
       videoUrl?: string;
       videoProvider?: any;
@@ -61,6 +62,13 @@ export default async function LessonPage({
       weekSlug: week.slug,
       lessonSlug: lesson.slug,
     }),
+    Note.findOne({
+      userId: new mongoose.Types.ObjectId(user.id),
+      weekSlug: week.slug,
+      lessonSlug: lesson.slug,
+    })
+      .select("body")
+      .lean<{ body: string }>(),
   ]);
 
   const idx = week.lessons.findIndex((l) => l.slug === lesson.slug);
@@ -127,6 +135,7 @@ export default async function LessonPage({
         quizBestScore={progress?.quizBestScore}
         challenge={dbLesson?.challenge || lesson.challenge}
         resources={dbLesson?.resources || []}
+        initialNote={note?.body || ""}
       />
 
       <div className="grid sm:grid-cols-2 gap-3 pt-2">
