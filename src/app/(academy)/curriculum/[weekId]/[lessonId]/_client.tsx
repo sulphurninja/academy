@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   ExternalLink,
@@ -13,13 +13,20 @@ import {
   Share2,
   CheckCircle2,
   BookOpen,
+  Timer,
+  Play,
+  Pause,
+  RotateCcw,
+  Bot,
+  Send,
+  Loader2,
 } from "lucide-react";
 import VideoPlayer, { VideoActions } from "@/components/academy/VideoPlayer";
 import QuizPanel, { type QuizSummary } from "@/components/academy/QuizPanel";
 import CommentThread from "@/components/academy/CommentThread";
 import { cn } from "@/lib/utils";
 
-type Tab = "quiz" | "comments" | "challenge" | "resources" | "notes";
+type Tab = "quiz" | "comments" | "challenge" | "resources" | "notes" | "focus" | "ai";
 
 interface Props {
   userId: string;
@@ -46,6 +53,79 @@ export function LessonClient(props: Props) {
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
 
+  // Pomodoro state
+  const [pomoDuration, setPomoDuration] = useState(25);
+  const [pomoSecondsLeft, setPomoSecondsLeft] = useState(25 * 60);
+  const [pomoRunning, setPomoRunning] = useState(false);
+  const [pomoSessions, setPomoSessions] = useState(0);
+  const pomoRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (pomoRunning && pomoSecondsLeft > 0) {
+      pomoRef.current = setInterval(() => {
+        setPomoSecondsLeft((s) => {
+          if (s <= 1) {
+            setPomoRunning(false);
+            setPomoSessions((c) => c + 1);
+            if (pomoRef.current) clearInterval(pomoRef.current);
+            try { new Audio("/notification.mp3").play().catch(() => {}); } catch {}
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (pomoRef.current) clearInterval(pomoRef.current); };
+  }, [pomoRunning, pomoSecondsLeft]);
+
+  const resetPomo = (mins: number) => {
+    setPomoRunning(false);
+    setPomoDuration(mins);
+    setPomoSecondsLeft(mins * 60);
+    if (pomoRef.current) clearInterval(pomoRef.current);
+  };
+
+  // AI Study Buddy state
+  const [aiMessages, setAiMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
+  const [aiDraft, setAiDraft] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiEndRef = useRef<HTMLDivElement>(null);
+
+  const sendAiMessage = useCallback(async () => {
+    if (!aiDraft.trim() || aiLoading) return;
+    const userMsg = aiDraft.trim();
+    setAiDraft("");
+    setAiMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/ai/study-buddy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonTitle: props.title,
+          weekSlug: props.weekSlug,
+          lessonSlug: props.lessonSlug,
+          message: userMsg,
+          history: aiMessages.slice(-6),
+        }),
+      });
+      if (res.ok) {
+        const { reply } = await res.json();
+        setAiMessages((prev) => [...prev, { role: "assistant", text: reply }]);
+      } else {
+        setAiMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I couldn't process that. Please try again." }]);
+      }
+    } catch {
+      setAiMessages((prev) => [...prev, { role: "assistant", text: "Connection error. Please try again." }]);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [aiDraft, aiLoading, aiMessages, props.title, props.weekSlug, props.lessonSlug]);
+
+  useEffect(() => {
+    aiEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [aiMessages]);
+
   const onVideoComplete = async () => {
     if (completed) return;
     setCompleted(true);
@@ -71,6 +151,8 @@ export function LessonClient(props: Props) {
       : []),
     { id: "comments", label: "Discussion", icon: <MessageCircle className="h-3.5 w-3.5" /> },
     { id: "notes", label: "Notes", icon: <StickyNote className="h-3.5 w-3.5" /> },
+    { id: "focus", label: "Focus", icon: <Timer className="h-3.5 w-3.5" /> },
+    { id: "ai", label: "AI Buddy", icon: <Bot className="h-3.5 w-3.5" /> },
     ...(props.resources.length
       ? [{ id: "resources" as Tab, label: "Resources", icon: <FileText className="h-3.5 w-3.5" /> }]
       : []),
@@ -272,6 +354,138 @@ export function LessonClient(props: Props) {
                   >
                     <Bookmark className="h-3.5 w-3.5" />
                     {noteSaving ? "Saving…" : "Save note"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {tab === "focus" && (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="relative inline-flex items-center justify-center">
+                    <svg className="w-40 h-40 -rotate-90" viewBox="0 0 160 160">
+                      <circle cx="80" cy="80" r="70" fill="none" stroke="#e2e8f0" strokeWidth="8" />
+                      <circle
+                        cx="80" cy="80" r="70" fill="none"
+                        stroke={pomoSecondsLeft === 0 ? "#10b981" : "#3b82f6"}
+                        strokeWidth="8" strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 70}
+                        strokeDashoffset={2 * Math.PI * 70 * (1 - pomoSecondsLeft / (pomoDuration * 60))}
+                        className="transition-all duration-1000"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-3xl font-black text-slate-900 tabular-nums">
+                        {String(Math.floor(pomoSecondsLeft / 60)).padStart(2, "0")}:{String(pomoSecondsLeft % 60).padStart(2, "0")}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        {pomoSecondsLeft === 0 ? "Done!" : pomoRunning ? "Focusing" : "Paused"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setPomoRunning(!pomoRunning)}
+                    disabled={pomoSecondsLeft === 0}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                  >
+                    {pomoRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                    {pomoRunning ? "Pause" : "Start"}
+                  </button>
+                  <button
+                    onClick={() => resetPomo(pomoDuration)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Reset
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-1.5">
+                  {[15, 25, 45, 60].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => resetPomo(m)}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-[10px] font-bold transition-colors",
+                        pomoDuration === m
+                          ? "bg-blue-100 text-blue-700 border border-blue-200"
+                          : "bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100"
+                      )}
+                    >
+                      {m}m
+                    </button>
+                  ))}
+                </div>
+
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessions today</div>
+                  <div className="text-lg font-black text-emerald-600 mt-0.5">{pomoSessions}</div>
+                </div>
+              </div>
+            )}
+
+            {tab === "ai" && (
+              <div className="flex flex-col h-[50vh]">
+                <div className="flex-1 overflow-y-auto scrollbar-soft space-y-3 pb-3">
+                  {aiMessages.length === 0 && (
+                    <div className="text-center py-6">
+                      <Bot className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-slate-900">AI Study Buddy</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Ask anything about &ldquo;{props.title}&rdquo; — I&apos;ll help you understand it better.
+                      </p>
+                      <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                        {["Explain the key concepts", "Give me a real-world example", "What are common mistakes?"].map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => { setAiDraft(q); }}
+                            className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 transition-colors"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {aiMessages.map((msg, i) => (
+                    <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                      <div className={cn(
+                        "max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed",
+                        msg.role === "user"
+                          ? "bg-emerald-600 text-white rounded-br-md"
+                          : "bg-slate-100 text-slate-700 rounded-bl-md"
+                      )}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                  {aiLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-slate-100 rounded-2xl rounded-bl-md px-3 py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={aiEndRef} />
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                  <input
+                    type="text"
+                    value={aiDraft}
+                    onChange={(e) => setAiDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAiMessage(); } }}
+                    placeholder="Ask about this lesson…"
+                    className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    disabled={aiLoading}
+                  />
+                  <button
+                    onClick={sendAiMessage}
+                    disabled={aiLoading || !aiDraft.trim()}
+                    className="h-9 w-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-40 transition-colors shrink-0"
+                  >
+                    {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               </div>

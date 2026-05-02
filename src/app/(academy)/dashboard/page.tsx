@@ -31,6 +31,8 @@ import XpBar from "@/components/academy/XpBar";
 import StreakFlame from "@/components/academy/StreakFlame";
 import LeaderboardTable from "@/components/academy/LeaderboardTable";
 import SuggestedMembers from "@/components/academy/SuggestedMembers";
+import DailyChallenges from "@/components/academy/DailyChallenges";
+import ShareableProgress from "@/components/academy/ShareableProgress";
 import { Avatar } from "@/components/ui/avatar";
 import Follow from "@/models/Follow";
 
@@ -238,6 +240,20 @@ export default async function DashboardPage() {
                 Build your founder network
               </div>
             </div>
+            <div className="col-span-2">
+              <ShareableProgress
+                data={{
+                  name: user.name,
+                  level: level.level,
+                  levelTitle: level.title,
+                  xp,
+                  streak: streak?.current || 0,
+                  lessonsCompleted: watchedCount,
+                  totalLessons: totalLessonsCount,
+                  badges: earnedBadges.length,
+                }}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -342,6 +358,9 @@ export default async function DashboardPage() {
               })}
             </ul>
           </section>
+
+          {/* Daily Challenges */}
+          <DailyChallenges />
 
           {/* Suggested members */}
           <SuggestedMembers initial={suggested.members} limit={6} />

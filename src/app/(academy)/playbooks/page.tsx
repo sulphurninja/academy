@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookOpen, Clock, ArrowRight, CheckCircle2, Video } from "lucide-react";
-import { WEEKS, PHASE_THEME } from "@/lib/curriculum";
+import { CURRICULUM, PHASE_THEME } from "@/lib/curriculum";
 import { getCurrentUser } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Lesson from "@/models/Lesson";
@@ -50,7 +50,7 @@ export default async function GuidesHub() {
         </div>
       </header>
 
-      {WEEKS.map((week) => {
+      {CURRICULUM.map((week) => {
         const theme = PHASE_THEME[week.phase];
         const weekLessons = week.lessons.filter((l) =>
           lessonMap.has(`${week.slug}:${l.slug}`)

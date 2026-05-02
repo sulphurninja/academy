@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AcademySidebar from "./AcademySidebar";
 import AcademyTopbar from "./AcademyTopbar";
+import SpotifyPlayer from "@/components/academy/SpotifyPlayer";
 import { type LevelInfo } from "@/lib/xp";
 
 interface ShellProps {
@@ -69,6 +70,7 @@ export default function AcademyShell({
           {children}
         </main>
       </div>
+      <SpotifyPlayer />
     </div>
   );
 }
