@@ -100,27 +100,5 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Challenge not found or already completed" }, { status: 404 });
   }
 
-  const challenge = (result as any).challenges.find((c: any) => c.id === challengeId);
-  if (challenge) {
-    await DailyChallenge.updateOne(
-      { _id: (result as any)._id },
-      { $inc: { totalXpEarned: challenge.xp } }
-    );
-
-    try {
-      await fetch(new URL("/api/me/xp", req.url).toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: req.headers.get("cookie") || "",
-        },
-        body: JSON.stringify({
-          amount: challenge.xp,
-          reason: `Daily challenge: ${challenge.title}`,
-        }),
-      });
-    } catch {}
-  }
-
-  return NextResponse.json({ ok: true, xpEarned: challenge?.xp || 0 });
+  return NextResponse.json({ ok: true });
 }

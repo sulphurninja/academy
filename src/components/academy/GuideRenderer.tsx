@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Lightbulb,
@@ -8,35 +9,12 @@ import {
   CheckCircle2,
   Zap,
   ArrowRight,
-  Copy,
   ExternalLink,
   Star,
   Target,
   Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-/**
- * Renders rich lesson content from a custom markup format.
- *
- * Supported blocks (delimited by lines starting with :::):
- *   :::tip        → green tip callout
- *   :::warning    → amber warning callout
- *   :::info       → blue info callout
- *   :::pro-tip    → gradient pro-tip card
- *   :::steps      → numbered step list (each line starting with - is a step)
- *   :::checklist  → interactive-looking checklist
- *   :::highlight  → highlighted quote/stat card
- *   :::cta url text → call-to-action button
- *
- * Regular content is rendered as paragraphs with rich inline formatting:
- *   **bold**, *italic*, `code`, [text](url)
- *
- * Lines starting with # ## ### are headings.
- * Lines starting with - are bullet points.
- * Lines starting with > are blockquotes.
- * Empty lines separate paragraphs.
- */
 
 const CALLOUT_CONFIG = {
   tip: {
@@ -93,7 +71,7 @@ function parseInline(text: string): React.ReactNode[] {
       nodes.push(text.slice(lastIndex, match.index));
     }
     if (match[1]) {
-      nodes.push(<strong key={key++} className="font-bold text-slate-900">{match[2]}</strong>);
+      nodes.push(<strong key={key++} className="font-bold">{match[2]}</strong>);
     } else if (match[3]) {
       nodes.push(<em key={key++} className="italic">{match[4]}</em>);
     } else if (match[5]) {
@@ -183,28 +161,68 @@ function Steps({ children }: { children: string }) {
   );
 }
 
-function Checklist({ children }: { children: string }) {
+function Checklist({ children, storageKey }: { children: string; storageKey: string }) {
   const items = children
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.startsWith("- "))
     .map((l) => l.slice(2));
 
+  const [checked, setChecked] = useState<boolean[]>(() => {
+    if (typeof window === "undefined") return items.map(() => false);
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === items.length) return parsed;
+      }
+    } catch {}
+    return items.map(() => false);
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify(checked)); } catch {}
+  }, [checked, storageKey]);
+
+  const toggle = (idx: number) => {
+    setChecked((prev) => prev.map((v, i) => (i === idx ? !v : v)));
+  };
+
+  const doneCount = checked.filter(Boolean).length;
+
   return (
     <div className="my-5 rounded-2xl border border-slate-200 bg-white overflow-hidden">
-      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
         <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
           <Target className="h-3.5 w-3.5 text-emerald-600" /> Checklist
+        </span>
+        <span className="text-[10px] font-bold text-slate-400">
+          {doneCount}/{items.length}
         </span>
       </div>
       <div className="p-4 space-y-2.5">
         {items.map((item, i) => (
-          <label key={i} className="flex items-start gap-3 cursor-pointer group">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 border-slate-300 bg-white group-hover:border-emerald-400 transition-colors">
-              <CheckCircle2 className="h-3 w-3 text-transparent group-hover:text-emerald-300 transition-colors" />
+          <button
+            key={i}
+            type="button"
+            onClick={() => toggle(i)}
+            className="flex items-start gap-3 w-full text-left group"
+          >
+            <span className={cn(
+              "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 transition-all",
+              checked[i]
+                ? "border-emerald-500 bg-emerald-500"
+                : "border-slate-300 bg-white group-hover:border-emerald-400"
+            )}>
+              {checked[i] && <CheckCircle2 className="h-3 w-3 text-white" />}
             </span>
-            <span className="text-sm text-slate-700 leading-relaxed">{parseInline(item)}</span>
-          </label>
+            <span className={cn(
+              "text-sm leading-relaxed transition-colors",
+              checked[i] ? "text-slate-400 line-through" : "text-slate-700"
+            )}>
+              {parseInline(item)}
+            </span>
+          </button>
         ))}
       </div>
     </div>
@@ -213,17 +231,51 @@ function Checklist({ children }: { children: string }) {
 
 function Highlight({ children }: { children: string }) {
   return (
-    <div className="my-6 relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white">
+    <div className="my-6 relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-6">
       <div className="absolute top-3 right-3 opacity-10">
-        <Star className="h-16 w-16" />
+        <Star className="h-16 w-16 text-white" />
       </div>
-      <div className="relative text-lg font-black leading-snug tracking-tight">
+      <div className="relative text-lg font-black leading-snug tracking-tight text-white">
         {children.split("\n").map((line, i) => (
-          <p key={i} className={i > 0 ? "mt-2" : ""}>{parseInline(line.trim())}</p>
+          <p key={i} className={i > 0 ? "mt-2" : ""}>{parseInlineWhite(line.trim())}</p>
         ))}
       </div>
     </div>
   );
+}
+
+function parseInlineWhite(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)|(\[(.+?)\]\((.+?)\))/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1]) {
+      nodes.push(<strong key={key++} className="font-bold text-emerald-400">{match[2]}</strong>);
+    } else if (match[3]) {
+      nodes.push(<em key={key++} className="italic text-slate-300">{match[4]}</em>);
+    } else if (match[5]) {
+      nodes.push(
+        <code key={key++} className="inline-flex items-center rounded-md bg-white/10 border border-white/20 px-1.5 py-0.5 text-[13px] font-mono text-emerald-300">
+          {match[6]}
+        </code>
+      );
+    } else if (match[7]) {
+      nodes.push(
+        <a key={key++} href={match[9]} target="_blank" rel="noopener noreferrer" className="text-emerald-400 font-semibold underline underline-offset-2">
+          {match[8]}
+        </a>
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return nodes;
 }
 
 function CtaButton({ url, text }: { url: string; text: string }) {
@@ -244,11 +296,51 @@ function CtaButton({ url, text }: { url: string; text: string }) {
   );
 }
 
+function Table({ rows }: { rows: string[][] }) {
+  if (rows.length === 0) return null;
+  const header = rows[0];
+  const body = rows.slice(1).filter((r) => !r.every((c) => /^[-:]+$/.test(c.trim())));
+
+  return (
+    <div className="my-5 rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              {header.map((cell, i) => (
+                <th key={i} className="px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-widest text-slate-500">
+                  {parseInline(cell.trim())}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {body.map((row, i) => (
+              <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                {row.map((cell, j) => (
+                  <td key={j} className="px-4 py-2.5 text-slate-700">
+                    {parseInline(cell.trim())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function parseTableRow(line: string): string[] {
+  return line.split("|").map((c) => c.trim()).filter((_, i, arr) => i > 0 && i < arr.length);
+}
+
 export default function GuideRenderer({ content }: { content: string }) {
   const blocks: React.ReactNode[] = [];
   const lines = content.split("\n");
   let i = 0;
   let key = 0;
+  let checklistCounter = 0;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -266,14 +358,13 @@ export default function GuideRenderer({ content }: { content: string }) {
         continue;
       }
 
-      // Collect block content until closing :::
       const blockLines: string[] = [];
       i++;
       while (i < lines.length && !lines[i].startsWith(":::")) {
         blockLines.push(lines[i]);
         i++;
       }
-      i++; // skip closing :::
+      i++;
       const blockContent = blockLines.join("\n").trim();
 
       if (type in CALLOUT_CONFIG) {
@@ -281,9 +372,23 @@ export default function GuideRenderer({ content }: { content: string }) {
       } else if (type === "steps") {
         blocks.push(<Steps key={key++}>{blockContent}</Steps>);
       } else if (type === "checklist") {
-        blocks.push(<Checklist key={key++}>{blockContent}</Checklist>);
+        const storageKey = `zapacademy:checklist:${checklistCounter++}:${blockContent.slice(0, 30).replace(/\W/g, "")}`;
+        blocks.push(<Checklist key={key++} storageKey={storageKey}>{blockContent}</Checklist>);
       } else if (type === "highlight") {
         blocks.push(<Highlight key={key++}>{blockContent}</Highlight>);
+      }
+      continue;
+    }
+
+    // Table (lines starting with |)
+    if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
+      const tableRows: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|") && lines[i].trim().endsWith("|")) {
+        tableRows.push(parseTableRow(lines[i]));
+        i++;
+      }
+      if (tableRows.length >= 2) {
+        blocks.push(<Table key={key++} rows={tableRows} />);
       }
       continue;
     }

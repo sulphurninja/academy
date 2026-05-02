@@ -51,7 +51,7 @@ export default async function GuidePage({
   const readTime = dbLesson.readingTimeMinutes || Math.ceil((dbLesson.content?.length || 0) / 1200);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full px-4 sm:px-8 lg:px-16 space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs">
         <Link href="/playbooks" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 font-bold">

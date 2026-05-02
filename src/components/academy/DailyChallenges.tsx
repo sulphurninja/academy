@@ -7,7 +7,6 @@ import {
   Circle,
   Loader2,
   Star,
-  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +14,6 @@ interface Challenge {
   id: string;
   title: string;
   description: string;
-  xp: number;
   type: string;
   completed: boolean;
 }
@@ -30,7 +28,6 @@ export default function DailyChallenges() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState<string | null>(null);
-  const [totalXp, setTotalXp] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -39,7 +36,6 @@ export default function DailyChallenges() {
         if (res.ok) {
           const data = await res.json();
           setChallenges(data.challenges);
-          setTotalXp(data.totalXpEarned);
         }
       } finally {
         setLoading(false);
@@ -56,11 +52,9 @@ export default function DailyChallenges() {
         body: JSON.stringify({ challengeId: id }),
       });
       if (res.ok) {
-        const { xpEarned } = await res.json();
         setChallenges((prev) =>
           prev.map((c) => (c.id === id ? { ...c, completed: true } : c))
         );
-        setTotalXp((prev) => prev + (xpEarned || 0));
       }
     } finally {
       setCompleting(null);
@@ -91,7 +85,7 @@ export default function DailyChallenges() {
             <div>
               <h3 className="text-sm font-black text-slate-900">Daily Challenges</h3>
               <p className="text-[10px] text-slate-500 font-bold">
-                {doneCount}/{challenges.length} completed
+                {doneCount}/{challenges.length} completed today
               </p>
             </div>
           </div>
@@ -102,7 +96,6 @@ export default function DailyChallenges() {
           )}
         </div>
 
-        {/* Progress bar */}
         <div className="mt-3 h-2 rounded-full bg-slate-200 overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500 transition-all duration-500"
@@ -145,32 +138,15 @@ export default function DailyChallenges() {
               <div className="text-[10px] text-slate-500">{ch.description}</div>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className={cn(
-                "inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                TYPE_COLORS[ch.type] || "bg-slate-100 text-slate-500"
-              )}>
-                {ch.type}
-              </span>
-              <span className={cn(
-                "text-xs font-extrabold",
-                ch.completed ? "text-emerald-500" : "text-amber-600"
-              )}>
-                +{ch.xp}
-              </span>
-            </div>
+            <span className={cn(
+              "inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0",
+              TYPE_COLORS[ch.type] || "bg-slate-100 text-slate-500"
+            )}>
+              {ch.type}
+            </span>
           </div>
         ))}
       </div>
-
-      {totalXp > 0 && (
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">XP earned today</span>
-          <span className="text-sm font-extrabold text-emerald-600 flex items-center gap-1">
-            <Flame className="h-3.5 w-3.5 text-amber-500" /> +{totalXp}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
