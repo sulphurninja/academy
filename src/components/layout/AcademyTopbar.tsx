@@ -20,6 +20,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { fmtNumber, cn } from "@/lib/utils";
 import GlobalSearch from "@/components/academy/GlobalSearch";
 import NotificationsBell from "@/components/academy/NotificationsBell";
+import { SpotifyTopbarPill } from "@/components/academy/SpotifyPlayer";
 import { type LevelInfo } from "@/lib/xp";
 
 interface AcademyTopbarProps {
@@ -77,6 +78,11 @@ export default function AcademyTopbar({ user, xp, level, streak }: AcademyTopbar
         </Link>
 
         <div className="flex-1" />
+
+        <SpotifyTopbarPill onClick={() => {
+          const el = document.querySelector('[data-spotify-fab]') as HTMLButtonElement | null;
+          el?.click();
+        }} />
 
         {/* XP / streak / level — compact pills */}
         <div className="hidden sm:flex items-center gap-2">
