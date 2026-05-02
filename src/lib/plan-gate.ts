@@ -3,7 +3,7 @@
  * Configurable via ACADEMY_ALLOWED_PLANS (comma-separated).
  */
 export function getAllowedPlans(): string[] {
-  const raw = process.env.ACADEMY_ALLOWED_PLANS || "growth,growth_plus";
+  const raw = process.env.ACADEMY_ALLOWED_PLANS || "growth,growth_plus,advanced,enterprise,explore,trial";
   return raw
     .split(",")
     .map((p) => p.trim().toLowerCase())

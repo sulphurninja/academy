@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -11,6 +11,8 @@ import {
   Trash2,
   ExternalLink,
   FileText,
+  Send,
+  Loader2,
 } from "lucide-react";
 import {
   PiLinkedinLogoFill,
@@ -21,6 +23,19 @@ import {
 } from "react-icons/pi";
 import { Avatar } from "@/components/ui/avatar";
 import { fmtRelative, shortNumber, cn } from "@/lib/utils";
+
+interface PostCommentItem {
+  _id: string;
+  body: string;
+  createdAt: string;
+  authorId: string;
+  authorName: string;
+  authorEmail: string;
+  authorAvatarUrl: string | null;
+  parentId: string | null;
+  likes: number;
+  liked: boolean;
+}
 
 export interface PostCardProps {
   post: {
@@ -66,6 +81,57 @@ export default function PostCard({ post, isAdmin, onChanged }: PostCardProps) {
   const [count, setCount] = useState(post.likeCount);
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comments, setComments] = useState<PostCommentItem[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentPosting, setCommentPosting] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.commentCount);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function loadComments() {
+    setCommentsLoading(true);
+    try {
+      const r = await fetch(`/api/posts/${post.id}/comments`);
+      if (r.ok) {
+        const j = await r.json();
+        setComments(j.comments || []);
+        setCommentCount(j.comments?.length || 0);
+      }
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
+
+  function toggleComments() {
+    const next = !commentsOpen;
+    setCommentsOpen(next);
+    if (next && comments.length === 0) loadComments();
+  }
+
+  async function submitComment() {
+    if (!commentDraft.trim()) return;
+    setCommentPosting(true);
+    try {
+      const r = await fetch(`/api/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: commentDraft.trim() }),
+      });
+      if (r.ok) {
+        setCommentDraft("");
+        await loadComments();
+      }
+    } finally {
+      setCommentPosting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (commentsOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [commentsOpen]);
 
   async function toggleLike() {
     const next = !liked;
@@ -361,11 +427,17 @@ export default function PostCard({ post, isAdmin, onChanged }: PostCardProps) {
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-slate-100"
+          onClick={toggleComments}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors",
+            commentsOpen
+              ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+              : "hover:bg-slate-100"
+          )}
           aria-label="Comments"
         >
           <MessageCircle className="h-4 w-4" />
-          <span>{shortNumber(post.commentCount)}</span>
+          <span>{shortNumber(commentCount)}</span>
         </button>
         <button
           type="button"
@@ -380,6 +452,81 @@ export default function PostCard({ post, isAdmin, onChanged }: PostCardProps) {
           Share
         </button>
       </footer>
+
+      {commentsOpen && (
+        <div className="mt-3 border-t border-slate-100 pt-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={commentDraft}
+              onChange={(e) => setCommentDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submitComment();
+                }
+              }}
+              placeholder="Write a comment…"
+              className="flex-1 h-9 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-colors"
+              disabled={commentPosting}
+            />
+            <button
+              type="button"
+              onClick={submitComment}
+              disabled={commentPosting || !commentDraft.trim()}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {commentPosting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          {commentsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+            </div>
+          ) : comments.length === 0 ? (
+            <p className="text-center text-xs text-slate-400 py-2">
+              No comments yet — be the first!
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {comments.map((c) => (
+                <li key={c._id} className="flex gap-2.5">
+                  <Link href={`/u/${c.authorId}`} className="shrink-0 mt-0.5">
+                    <Avatar
+                      name={c.authorName}
+                      email={c.authorEmail}
+                      src={c.authorAvatarUrl || undefined}
+                      size={28}
+                    />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <div className="rounded-xl bg-slate-50 px-3 py-2">
+                      <Link
+                        href={`/u/${c.authorId}`}
+                        className="text-xs font-bold text-slate-900 hover:text-emerald-700"
+                      >
+                        {c.authorName}
+                      </Link>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap break-words mt-0.5">
+                        {c.body}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-slate-400 ml-3">
+                      {fmtRelative(c.createdAt)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </article>
   );
 }
