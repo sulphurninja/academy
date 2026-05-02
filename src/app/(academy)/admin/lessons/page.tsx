@@ -28,7 +28,7 @@ export default async function AdminLessonsPage() {
 
   await dbConnect();
   const dbLessons = await Lesson.find({})
-    .select("weekSlug lessonSlug videoUrl videoProvider isPublished xpVideoComplete quiz updatedAt")
+    .select("weekSlug lessonSlug videoUrl videoProvider isPublished xpVideoComplete quiz content updatedAt")
     .lean<
       {
         weekSlug: string;
@@ -38,6 +38,7 @@ export default async function AdminLessonsPage() {
         isPublished?: boolean;
         xpVideoComplete?: number;
         quiz?: any;
+        content?: string;
         updatedAt?: Date;
       }[]
     >();
@@ -108,6 +109,7 @@ export default async function AdminLessonsPage() {
                         isPublished: !!existing?.isPublished,
                         xpVideoComplete: existing?.xpVideoComplete ?? 50,
                         quizJson: existing?.quiz ? JSON.stringify(existing.quiz, null, 2) : "",
+                        content: existing?.content || "",
                       }}
                     />
                   );

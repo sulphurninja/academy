@@ -53,6 +53,7 @@ interface Initial {
   isPublished: boolean;
   xpVideoComplete: number;
   quizJson: string;
+  content: string;
 }
 
 interface Props {
@@ -200,6 +201,7 @@ export function AdminLessonForm({ weekSlug, lessonSlug, title, initial }: Props)
           isPublished: state.isPublished,
           xpVideoComplete: state.xpVideoComplete,
           quiz: quizPayload,
+          content: state.content || "",
         }),
       });
       const data = await res.json();
@@ -314,6 +316,43 @@ export function AdminLessonForm({ weekSlug, lessonSlug, title, initial }: Props)
               </>
             )}
           </Button>
+        </div>
+      </div>
+
+      {/* ── Written Guide Content ── */}
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50">
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById("content-editor");
+            if (el) el.classList.toggle("hidden");
+          }}
+          className="flex w-full items-center justify-between px-4 py-3 text-xs font-bold text-slate-700"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Type className="h-3.5 w-3.5 text-emerald-700" />
+            Written Guide Content
+            {state.content && (
+              <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-extrabold">
+                {Math.ceil(state.content.length / 1200)} min read
+              </span>
+            )}
+          </span>
+          <span className="text-slate-400">▾</span>
+        </button>
+        <div id="content-editor" className={state.content ? "" : "hidden"}>
+          <div className="border-t border-slate-200 p-4">
+            <p className="text-[10px] text-slate-500 mb-2">
+              Rich markup: **bold**, *italic*, `code`, [link](url). Blocks: :::tip, :::warning, :::info, :::steps, :::checklist, :::highlight, :::cta url text. Headings: # ## ###
+            </p>
+            <Textarea
+              value={state.content}
+              onChange={(e) => setState((s) => ({ ...s, content: e.target.value }))}
+              placeholder="Write your lesson guide content here using the markup syntax..."
+              rows={16}
+              className="font-mono text-xs"
+            />
+          </div>
         </div>
       </div>
 

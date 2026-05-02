@@ -28,6 +28,7 @@ import {
   X,
   Bell,
   Code2,
+  FileText,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn, fmtNumber } from "@/lib/utils";
@@ -97,6 +98,11 @@ export default function AcademySidebar({
             title: "Curriculum",
             href: "/curriculum",
             icon: <BookOpen className="h-4 w-4" />,
+          },
+          {
+            title: "Written Guides",
+            href: "/guides",
+            icon: <FileText className="h-4 w-4" />,
           },
           {
             title: "Today's lesson",

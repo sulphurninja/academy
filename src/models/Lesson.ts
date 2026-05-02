@@ -25,6 +25,10 @@ export interface ILesson extends Document {
   videoUrl?: string; // mp4, m3u8, youtube, vimeo
   videoProvider?: "youtube" | "vimeo" | "mp4" | "hls";
   durationSeconds?: number;
+  /** Rich text / markdown content for the "Read" tab. */
+  content?: string;
+  /** Estimated reading time in minutes (auto-calculated or manual). */
+  readingTimeMinutes?: number;
   resources?: { label: string; url: string }[];
   challenge?: string; // ChallengeKind
   quiz?: {
@@ -66,6 +70,8 @@ const LessonSchema = new Schema<ILesson>(
       default: "youtube",
     },
     durationSeconds: Number,
+    content: { type: String, default: "" },
+    readingTimeMinutes: Number,
     resources: [{ label: String, url: String }],
     challenge: String,
     quiz: {

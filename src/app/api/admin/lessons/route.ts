@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     quiz,
     resources,
     challenge,
+    content,
   } = body;
 
   const found = findLesson(weekSlug, lessonSlug);
@@ -51,6 +52,10 @@ export async function POST(req: Request) {
   if (xpVideoComplete !== undefined) update.xpVideoComplete = Number(xpVideoComplete) || 50;
   if (quiz !== undefined) update.quiz = quiz;
   if (resources !== undefined) update.resources = resources;
+  if (content !== undefined) {
+    update.content = content;
+    update.readingTimeMinutes = Math.ceil((content || "").length / 1200) || undefined;
+  }
 
   const lesson = await Lesson.findOneAndUpdate(
     { weekSlug, lessonSlug },

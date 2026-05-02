@@ -40,6 +40,7 @@ export default async function LessonPage({
       videoUrl?: string;
       videoProvider?: any;
       durationSeconds?: number;
+      content?: string;
       resources?: { label: string; url: string }[];
       challenge?: string;
       quiz?: any;
@@ -135,6 +136,7 @@ export default async function LessonPage({
         quizBestScore={progress?.quizBestScore}
         challenge={dbLesson?.challenge || lesson.challenge}
         resources={dbLesson?.resources || []}
+        hasGuide={!!dbLesson?.content}
         initialNote={note?.body || ""}
       />
 
